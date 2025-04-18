@@ -1,6 +1,6 @@
 {
-  "name": "hexo-generator-feed",
-  "version": "3.0.0",
+  "name": "hexo-pretty-feed",
+  "version": "1.0.0",
   "description": "Feed generator plugin for Hexo",
   "main": "index",
   "scripts": {
@@ -17,7 +17,7 @@
     "index.js",
     "rss2.xml"
   ],
-  "repository": "hexojs/hexo-generator-feed",
+  "repository": "willow-god/hexo-pretty-feed",
   "homepage": "https://hexo.io/",
   "keywords": [
     "hexo",
@@ -26,10 +26,7 @@
     "atom",
     "generator"
   ],
-  "author": "Tommy Chen <tommy351@gmail.com> (http://zespia.tw)",
-  "maintainers": [
-    "Abner Chou <hi@abnerchou.me> (http://abnerchou.me)"
-  ],
+  "author": "LiuShen <01@liushen.fun> (http://www.liushen.fun)",
   "license": "MIT",
   "dependencies": {
     "hexo-util": "^3.0.1",

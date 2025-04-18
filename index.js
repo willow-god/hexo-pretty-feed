@@ -11,6 +11,7 @@ hexo.config.feed = Object.assign({
   content: true,
   content_limit: 140,
   content_limit_delim: '',
+  pretty_file: '',
   order_by: '-date',
   autodiscovery: true,
   template: ''
