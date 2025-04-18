@@ -1,7 +1,7 @@
 {
   "name": "hexo-pretty-feed",
-  "version": "1.0.0",
-  "description": "Feed generator plugin for Hexo",
+  "version": "1.1.0",
+  "description": "在文件头部插入xsl文件，实现更加美观的RSS和Atom订阅文件",
   "main": "index",
   "scripts": {
     "eslint": "eslint .",
