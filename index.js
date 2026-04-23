@@ -11,6 +11,8 @@ hexo.config.feed = Object.assign({
   content: true,
   content_limit: 140,
   content_limit_delim: '',
+  pretty_rss2_file: '',
+  pretty_atom_file: '',
   order_by: '-date',
   autodiscovery: true
 }, hexo.config.feed);
