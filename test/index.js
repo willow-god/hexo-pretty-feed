@@ -34,6 +34,7 @@ describe('Feed generator', () => {
       {source: 'foo', slug: 'foo', content: '<h6>TestHTML</h6>', date: 1e8},
       {source: 'bar', slug: 'bar', date: 1e8 + 1},
       {source: 'baz', slug: 'baz', title: 'With Image', image: 'test.png', date: 1e8 - 1},
+      {source: 'cover-test', slug: 'cover-test', title: 'With Cover', cover: 'cover.webp', date: 1e8 - 3},
       {source: 'date', slug: 'date', title: 'date', date: 1e8 - 2, updated: undefined},
       {source: 'updated', slug: 'updated', title: 'updated', date: 1e8 - 2, updated: 1e8 + 10},
       {source: 'description', slug: 'description', title: 'description', description: '<h6>description</h6>', date: 1e8},
@@ -302,6 +303,39 @@ describe('Feed generator', () => {
     // Check generated XML contains complete image URL
     const expectedImageUrl = full_url_for.call(hexo, 'test.png');
     result.data.should.include(expectedImageUrl);
+  });
+
+  it('Cover field support', async () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml'
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'With Cover');
+    post.length.should.eql(1);
+    post[0].image.length.should.not.eql(0);
+
+    // Check MIME type is included for webp
+    result.data.should.include('image/webp');
+  });
+
+  it('Cover field support - RSS2', async () => {
+    hexo.config.feed = {
+      type: 'rss2',
+      path: 'rss2.xml'
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    // Check enclosure with type
+    result.data.should.include('<enclosure url=');
+    result.data.should.include('cover.webp');
+    result.data.should.include('type="image/webp"');
   });
 
   it('Icon (atom)', async () => {
