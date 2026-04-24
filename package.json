@@ -1,6 +1,6 @@
 {
   "name": "hexo-pretty-feed",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "在文件头部插入xsl文件，实现更加美观的RSS和Atom订阅文件",
   "main": "index",
   "scripts": {

@@ -4,6 +4,8 @@
 
 生成美观的 Atom 1.0 或 RSS 2.0 Feed，支持插入 XSL 样式美化输出。
 
+> 目前 Chrome 正在逐步废弃XSL方案，本插件正在寻求一种更为现代化的实现，将在未来上线。
+
 本插件基于 [hexo-generator-feed](https://github.com/hexojs/hexo-generator-feed) 修改，增加了 XSL 样式支持、封面图（`cover`/`image`）以及 MIME 类型自动识别等功能。
 
 ## 安装
@@ -147,8 +149,8 @@ feed:
 
 ## 相关项目
 
-- [RSS.Beauty](https://github.com/ccbikai/RSS.Beauty) - 本项目使用的 XSL 样式来源
+- [RSS.Beauty](https://github.com/ccbikai/RSS.Beauty) - 本项目灵感启发
 
 ---
 
-欢迎在 [GitHub](https://github.com/willow-god/hexo-pretty-feed) 提交反馈与 PR ❤️
+欢迎在 [GitHub](https://github.com/willow-god/hexo-pretty-feed/issues) 提交反馈与 PR ❤️
