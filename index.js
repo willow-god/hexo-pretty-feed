@@ -14,7 +14,8 @@ hexo.config.feed = Object.assign({
   pretty_rss2_file: '',
   pretty_atom_file: '',
   order_by: '-date',
-  autodiscovery: true
+  autodiscovery: true,
+  enable_xslt_polyfill: false
 }, hexo.config.feed);
 
 const config = hexo.config.feed;
@@ -98,4 +99,22 @@ if (typeof config.autodiscovery !== 'boolean') config.autodiscovery = true;
 
 if (config.autodiscovery === true) {
   hexo.extend.filter.register('after_render:html', require('./lib/autodiscovery'));
+}
+
+// Auto-copy xslt-polyfill.min.js when enabled and XSL is configured
+const hasPrettyAtom = typeof config.pretty_atom_file === 'string' && config.pretty_atom_file.length > 0;
+const hasPrettyRss2 = typeof config.pretty_rss2_file === 'string' && config.pretty_rss2_file.length > 0;
+
+if (config.enable_xslt_polyfill === true && (hasPrettyAtom || hasPrettyRss2)) {
+  const fs = require('fs');
+  const polyfillPath = join(__dirname, 'lib/assets/xslt-polyfill.min.js');
+
+  hexo.extend.generator.register('xslt-polyfill', () => {
+    return {
+      path: 'xslt-polyfill.min.js',
+      data: function() {
+        return fs.createReadStream(polyfillPath);
+      }
+    };
+  });
 }

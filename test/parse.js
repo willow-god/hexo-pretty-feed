@@ -45,7 +45,7 @@ const template = {
       date: 'published',
       updated: 'updated',
       description: 'summary',
-      content: 'content[@type="html"]',
+      content: 'content[@type="html"]|content',
       image: 'link[@rel="enclosure"]/@href',
       link: 'link',
       categories: ['category', '@term']

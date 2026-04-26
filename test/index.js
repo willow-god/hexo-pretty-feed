@@ -33,8 +33,10 @@ describe('Feed generator', () => {
     await Post.insert([
       {source: 'foo', slug: 'foo', content: '<h6>TestHTML</h6>', date: 1e8},
       {source: 'bar', slug: 'bar', date: 1e8 + 1},
-      {source: 'baz', slug: 'baz', title: 'With Image', image: 'test.png', date: 1e8 - 1},
-      {source: 'cover-test', slug: 'cover-test', title: 'With Cover', cover: 'cover.webp', date: 1e8 - 3},
+      {source: 'baz', slug: 'baz', title: 'With Image', image: 'test.png', content: '<p>Image body</p>', date: 1e8 - 1},
+      {source: 'cover-test', slug: 'cover-test', title: 'With Cover', cover: 'cover.webp', content: '<p>Cover body</p>', date: 1e8 - 3},
+      {source: 'content-with-img', slug: 'content-with-img', title: 'Content With Img', cover: 'cover.webp', content: '<p><img src="/inline.png" /></p><p>Inline image body</p>', date: 1e8 - 4},
+      {source: 'image-priority', slug: 'image-priority', title: 'Image Priority', image: 'primary.png', cover: 'fallback.webp', content: '<p>Priority body</p>', date: 1e8 - 5},
       {source: 'date', slug: 'date', title: 'date', date: 1e8 - 2, updated: undefined},
       {source: 'updated', slug: 'updated', title: 'updated', date: 1e8 - 2, updated: 1e8 + 10},
       {source: 'description', slug: 'description', title: 'description', description: '<h6>description</h6>', date: 1e8},
@@ -291,19 +293,93 @@ describe('Feed generator', () => {
     await checkRSSURL('http://localhost/', '/');
   });
 
-  it('Image should have full link', async () => {
+  it('Injects cover image into Atom content when full content is enabled', async () => {
     hexo.config.feed = {
       type: 'atom',
-      path: 'atom.xml'
+      path: 'atom.xml',
+      content: true
     };
     hexo.config = Object.assign(hexo.config, urlConfig);
     const feedCfg = hexo.config.feed;
     const result = generator(locals, feedCfg.type, feedCfg.path);
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'With Image');
 
-    // Check generated XML contains complete image URL
-    const expectedImageUrl = full_url_for.call(hexo, 'test.png');
-    result.data.should.include(expectedImageUrl);
+    post.length.should.eql(1);
+    post[0].content.should.include('<p><img src="http://localhost/test.png" alt="With Image" /></p>');
+    post[0].content.should.include('<p>Image body</p>');
   });
+
+  it('Injects summary into Atom content when full content is disabled', async () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml',
+      content: false
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'With Image');
+
+    post.length.should.eql(1);
+    post[0].content.should.include('<p><img src="http://localhost/test.png" alt="With Image" /></p>');
+    post[0].content.should.include('<p>Image body</p>');
+    post[0].description.should.eql('<p>Image body</p>');
+  });
+
+  it('Injects cover image into RSS content when full content is disabled', async () => {
+    hexo.config.feed = {
+      type: 'rss2',
+      path: 'rss2.xml',
+      content: false
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'With Image');
+
+    post.length.should.eql(1);
+    post[0].content.should.include('<p><img src="http://localhost/test.png" alt="With Image" /></p>');
+    post[0].content.should.include('<p>Image body</p>');
+  });
+
+  it('Does not inject duplicate cover image when content already contains an image', async () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml',
+      content: true
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'Content With Img');
+
+    post.length.should.eql(1);
+    post[0].content.should.include('<img src="/inline.png" />');
+    post[0].content.should.not.include('alt="Content With Img"');
+  });
+
+  it('Prefers image over cover for content injection and enclosure output', async () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml',
+      content: true
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+    const { items } = await p(result.data);
+    const post = items.filter(({ title }) => title === 'Image Priority');
+
+    post.length.should.eql(1);
+    post[0].content.should.include('http://localhost/primary.png');
+    post[0].content.should.not.include('fallback.webp');
+    post[0].image.should.include('http://localhost/primary.png');
+  });
+
 
   it('Cover field support', async () => {
     hexo.config.feed = {
@@ -669,6 +745,74 @@ describe('Feed generator', () => {
 
     // Should be truncated at content_limit since delimiter not found
     description.should.eql('This content has no delimiter');
+  });
+
+  it('XSLT polyfill disabled by default (atom)', () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml'
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    result.data.should.not.include('xslt-polyfill.min.js');
+  });
+
+  it('XSLT polyfill enabled (atom) with root-based path', () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml',
+      enable_xslt_polyfill: true,
+      pretty_atom_file: '/config/feed/atom.xsl'
+    };
+    hexo.config = Object.assign(hexo.config, urlConfigSubfolder);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    result.data.should.include('<script xmlns="http://www.w3.org/1999/xhtml" src="/blog/xslt-polyfill.min.js"></script>');
+    result.data.should.match(/<feed[^>]*>[\s\S]*?<script xmlns="http:\/\/www\.w3\.org\/1999\/xhtml" src="\/blog\/xslt-polyfill\.min\.js"><\/script>/);
+  });
+
+  it('XSLT polyfill enabled (rss2) with root-based path', () => {
+    hexo.config.feed = {
+      type: 'rss2',
+      path: 'rss2.xml',
+      enable_xslt_polyfill: true,
+      pretty_rss2_file: '/config/feed/rss2.xsl'
+    };
+    hexo.config = Object.assign(hexo.config, urlConfigSubfolder);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    result.data.should.include('<script xmlns="http://www.w3.org/1999/xhtml" src="/blog/xslt-polyfill.min.js"></script>');
+    result.data.should.match(/<channel>[\s\S]*?<script xmlns="http:\/\/www\.w3\.org\/1999\/xhtml" src="\/blog\/xslt-polyfill\.min\.js"><\/script>/);
+  });
+
+  it('Does not inject XSLT polyfill without Atom XSL path', () => {
+    hexo.config.feed = {
+      type: 'atom',
+      path: 'atom.xml',
+      enable_xslt_polyfill: true
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    result.data.should.not.include('xslt-polyfill.min.js');
+  });
+
+  it('Does not inject XSLT polyfill without RSS2 XSL path', () => {
+    hexo.config.feed = {
+      type: 'rss2',
+      path: 'rss2.xml',
+      enable_xslt_polyfill: true
+    };
+    hexo.config = Object.assign(hexo.config, urlConfig);
+    const feedCfg = hexo.config.feed;
+    const result = generator(locals, feedCfg.type, feedCfg.path);
+
+    result.data.should.not.include('xslt-polyfill.min.js');
   });
 });
 
